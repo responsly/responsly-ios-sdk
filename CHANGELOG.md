@@ -1,0 +1,7 @@
+# Changelog
+
+All notable changes to this SDK are documented here.
+
+## [0.6.0] - 2025-05-28
+
+- Establish Swift package and CocoaPods packaging.
