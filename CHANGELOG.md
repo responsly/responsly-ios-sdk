@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.6.4] - 2025-06-30
+
+- Introduce configurable SDK logging.
+
 ## [0.6.3] - 2025-06-23
 
 - Serialize stored attribute values.
