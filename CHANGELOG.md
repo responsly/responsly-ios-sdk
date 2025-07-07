@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.6.6] - 2025-07-07
+
+- Define survey lifecycle events.
+
 ## [0.6.5] - 2025-07-04
 
 - Define initialization and survey options.
