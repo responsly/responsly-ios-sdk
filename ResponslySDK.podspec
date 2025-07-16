@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'ResponslySDK'
-  s.version          = '0.6.6'
+  s.version          = '0.6.7'
   s.summary          = 'Show Responsly surveys inside your iOS app.'
   s.description      = <<-DESC
     The Responsly SDK shows in-app surveys as a bottom sheet, a dialog or full screen.
