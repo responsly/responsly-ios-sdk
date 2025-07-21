@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.7.0] - 2025-07-21
+
+- Model persisted SDK and user state.
+
 ## [0.6.7] - 2025-07-16
 
 - Define listener and display guard contracts.
