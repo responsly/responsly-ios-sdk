@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.7.1] - 2025-07-30
+
+- Persist identity and targeting counters.
+
 ## [0.7.0] - 2025-07-21
 
 - Model persisted SDK and user state.
