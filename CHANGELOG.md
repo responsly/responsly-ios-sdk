@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.7.4] - 2025-08-15
+
+- Verify configuration decoding contracts.
+
 ## [0.7.3] - 2025-08-12
 
 - Decode remote SDK configuration.
