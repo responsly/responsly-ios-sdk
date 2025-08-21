@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.7.5] - 2025-08-21
+
+- Evaluate audience and trait conditions.
+
 ## [0.7.4] - 2025-08-15
 
 - Verify configuration decoding contracts.
