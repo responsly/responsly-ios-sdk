@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.7.6] - 2025-08-29
+
+- Verify audience condition evaluation.
+
 ## [0.7.5] - 2025-08-21
 
 - Evaluate audience and trait conditions.
