@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "event trigger with frequency once",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "purchase" } ] }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:05:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": null, "not_shown": { "S1": "frequency_limit" } } },
+        { "at": "2026-11-10T12:06:00Z", "action": { "type": "completed", "survey": "S1" } },
+        { "at": "2026-11-10T12:07:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": null, "not_shown": { "S1": "already_completed" } } },
+        { "at": "2026-11-10T12:08:00Z", "action": { "type": "track", "name": "Purchase" }, "expect": { "show": null, "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "event min_count and property conditions",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "frequency": { "mode": "always" },
+          "triggers": [ { "type": "event", "name": "add_to_cart", "min_count": 3, "conditions": [ { "property": "value", "op": "gte", "value": 100 } ] } ] }
+      ] },
+      "context": { "platform": "android", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "add_to_cart", "properties": { "value": 150 } }, "expect": { "show": null, "not_shown": {} } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "track", "name": "add_to_cart", "properties": { "value": 50 } }, "expect": { "show": null, "not_shown": {} } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "track", "name": "add_to_cart", "properties": { "value": 50 } }, "expect": { "show": null, "not_shown": {} } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "track", "name": "add_to_cart", "properties": { "value": 100 } }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:40Z", "action": { "type": "track", "name": "add_to_cart", "properties": { "value": "250" } }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:50Z", "action": { "type": "track", "name": "add_to_cart" }, "expect": { "show": null, "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "screen and app_launch triggers",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "frequency": { "mode": "always" }, "triggers": [ { "type": "screen", "name": "Checkout" } ] },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "frequency": { "mode": "always" }, "triggers": [ { "type": "app_launch" } ] }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "app_launch" }, "expect": { "show": "S2", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "screen", "name": "checkout" }, "expect": { "show": null, "not_shown": {} } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "screen", "name": "Checkout" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "track", "name": "Checkout" }, "expect": { "show": null, "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "first eligible survey wins in configuration order",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ] },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "event", "name": "e" } ] }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": { "S2": "another_survey_selected" } } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:10:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S2", "not_shown": { "S1": "frequency_limit" } } }
+      ]
+    },
+    {
+      "name": "audience: platform, app id, locale",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ], "audience": { "platforms": [ "android" ] } },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ], "audience": { "app_ids": [ "com.other" ] } },
+        { "id": "S3", "url": "https://acme.responsly.com/f/S3", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ], "audience": { "locales": [ "pl", "pt-BR" ] } },
+        { "id": "S4", "url": "https://acme.responsly.com/f/S4", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ], "audience": { "locales": [ "en" ], "platforms": [ "ios", "android" ], "app_ids": [ "com.acme.app" ] } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S4", "not_shown": { "S1": "platform_mismatch", "S2": "app_mismatch", "S3": "locale_mismatch" } } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "set_locale", "locale": "pt_br" } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S3", "not_shown": { "S1": "platform_mismatch", "S2": "app_mismatch", "S4": "locale_mismatch" } } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "set_locale", "locale": "pt-PT" } },
+        { "at": "2026-11-10T12:00:40Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "platform_mismatch", "S2": "app_mismatch", "S3": "locale_mismatch", "S4": "locale_mismatch" } } },
+        { "at": "2026-11-10T12:00:50Z", "action": { "type": "set_locale", "locale": null } },
+        { "at": "2026-11-10T12:01:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S4" } }
+      ]
+    },
+    {
+      "name": "audience: identified and trait conditions",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ],
+          "audience": { "identified": true, "match": "all", "conditions": [ { "attribute": "plan", "op": "eq", "value": "PRO" }, { "attribute": "seats", "op": "gte", "value": 5 } ] } },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ],
+          "audience": { "identified": false } },
+        { "id": "S3", "url": "https://acme.responsly.com/f/S3", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ],
+          "audience": { "match": "any", "conditions": [ { "attribute": "beta", "op": "eq", "value": true }, { "attribute": "country", "op": "contains", "value": "land" } ] } },
+        { "id": "S4", "url": "https://acme.responsly.com/f/S4", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "e" } ],
+          "audience": { "conditions": [ { "attribute": "churn_risk", "op": "not_exists" }, { "attribute": "plan", "op": "neq", "value": "free" } ] } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S2", "not_shown": { "S1": "audience_mismatch", "S3": "audience_mismatch", "S4": "another_survey_selected" } } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "identify", "user_id": "u1", "traits": { "plan": "pro", "seats": 5, "country": "Poland" } } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": { "S2": "audience_mismatch", "S3": "another_survey_selected", "S4": "another_survey_selected" } } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "set_attributes", "traits": { "seats": "4", "beta": true, "churn_risk": 0.5, "country": null } } },
+        { "at": "2026-11-10T12:00:40Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S3", "not_shown": { "S1": "audience_mismatch", "S2": "audience_mismatch", "S4": "audience_mismatch" } } }
+      ]
+    },
+    {
+      "name": "condition equality, text and ordering rules",
+      "config": { "surveys": [
+        { "id": "A", "url": "https://acme.responsly.com/f/A", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "A" } ], "audience": { "conditions": [ { "attribute": "n", "op": "eq", "value": "5" } ] } },
+        { "id": "B", "url": "https://acme.responsly.com/f/B", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "B" } ], "audience": { "conditions": [ { "attribute": "s", "op": "eq", "value": 5 } ] } },
+        { "id": "C", "url": "https://acme.responsly.com/f/C", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "C" } ], "audience": { "conditions": [ { "attribute": "f", "op": "eq", "value": "5.5" } ] } },
+        { "id": "D", "url": "https://acme.responsly.com/f/D", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "D" } ], "audience": { "conditions": [ { "attribute": "b", "op": "eq", "value": "TRUE" } ] } },
+        { "id": "E", "url": "https://acme.responsly.com/f/E", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "E" } ], "audience": { "conditions": [ { "attribute": "d", "op": "gt", "value": "2026-01-01T00:00:00Z" } ] } },
+        { "id": "F", "url": "https://acme.responsly.com/f/F", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "F" } ], "audience": { "conditions": [ { "attribute": "name", "op": "contains", "value": "zo" } ] } },
+        { "id": "G", "url": "https://acme.responsly.com/f/G", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "G" } ], "audience": { "conditions": [ { "attribute": "n", "op": "gt", "value": "abc" } ] } },
+        { "id": "H", "url": "https://acme.responsly.com/f/H", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "H" } ], "audience": { "conditions": [ { "attribute": "n", "op": "regex", "value": ".*" } ] } },
+        { "id": "I", "url": "https://acme.responsly.com/f/I", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "I" } ], "audience": { "conditions": [ { "attribute": "n", "op": "lt", "value": 5.5 } ] } },
+        { "id": "J", "url": "https://acme.responsly.com/f/J", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "J" } ], "audience": { "conditions": [ { "attribute": "s", "op": "lte", "value": "5" } ] } },
+        { "id": "K", "url": "https://acme.responsly.com/f/K", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "K" } ], "audience": { "conditions": [ { "attribute": "missing", "op": "not_contains", "value": "x" } ] } },
+        { "id": "L", "url": "https://acme.responsly.com/f/L", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "L" } ], "audience": { "conditions": [ { "attribute": "missing", "op": "lt", "value": 1 } ] } },
+        { "id": "M", "url": "https://acme.responsly.com/f/M", "frequency": { "mode": "always" }, "triggers": [ { "type": "event", "name": "M" } ], "audience": { "conditions": [ { "attribute": "b", "op": "neq", "value": false } ] } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "set_attributes", "traits": { "n": 5, "s": "5", "f": 5.5, "b": true, "d": "2026-11-10T12:00:00Z", "name": "Zoë" } } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "track", "name": "A" }, "expect": { "show": "A", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:02Z", "action": { "type": "track", "name": "B" }, "expect": { "show": "B", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:03Z", "action": { "type": "track", "name": "C" }, "expect": { "show": "C", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:04Z", "action": { "type": "track", "name": "D" }, "expect": { "show": "D", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:05Z", "action": { "type": "track", "name": "E" }, "expect": { "show": "E", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:06Z", "action": { "type": "track", "name": "F" }, "expect": { "show": "F", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:07Z", "action": { "type": "track", "name": "G" }, "expect": { "show": null, "not_shown": { "G": "audience_mismatch" } } },
+        { "at": "2026-11-10T12:00:08Z", "action": { "type": "track", "name": "H" }, "expect": { "show": null, "not_shown": { "H": "audience_mismatch" } } },
+        { "at": "2026-11-10T12:00:09Z", "action": { "type": "track", "name": "I" }, "expect": { "show": "I", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "track", "name": "J" }, "expect": { "show": "J", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:11Z", "action": { "type": "track", "name": "K" }, "expect": { "show": "K", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:12Z", "action": { "type": "track", "name": "L" }, "expect": { "show": null, "not_shown": { "L": "audience_mismatch" } } },
+        { "at": "2026-11-10T12:00:13Z", "action": { "type": "track", "name": "M" }, "expect": { "show": "M", "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "frequency until_completed with recontact and max_displays",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ],
+          "frequency": { "mode": "until_completed", "recontact_seconds": 3600, "max_displays": 2 } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "dismissed", "survey": "S1" } },
+        { "at": "2026-11-10T12:30:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "recontact_wait" } } },
+        { "at": "2026-11-10T13:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T13:00:00Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T15:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "frequency_limit" } } }
+      ]
+    },
+    {
+      "name": "frequency until_completed stops after completion",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ], "frequency": { "mode": "until_completed" } }
+      ] },
+      "context": { "platform": "android", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1" } },
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:00:05Z", "action": { "type": "dismissed", "survey": "S1" } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1" } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "completed", "survey": "S1" } },
+        { "at": "2026-11-10T12:00:30Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "already_completed" } } }
+      ]
+    },
+    {
+      "name": "frequency recurring and always",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "r" } ], "frequency": { "mode": "recurring", "recontact_seconds": 86400 } },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "event", "name": "a" } ], "frequency": { "mode": "always", "max_displays": 2 } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "r" }, "expect": { "show": "S1" } },
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:01:00Z", "action": { "type": "completed", "survey": "S1" } },
+        { "at": "2026-11-10T18:00:00Z", "action": { "type": "track", "name": "r" }, "expect": { "show": null, "not_shown": { "S1": "recontact_wait" } } },
+        { "at": "2026-11-11T12:00:00Z", "action": { "type": "track", "name": "r" }, "expect": { "show": "S1" } },
+        { "at": "2026-11-11T12:00:10Z", "action": { "type": "track", "name": "a" }, "expect": { "show": "S2" } },
+        { "at": "2026-11-11T12:00:10Z", "action": { "type": "displayed", "survey": "S2", "auto": true } },
+        { "at": "2026-11-11T12:00:20Z", "action": { "type": "track", "name": "a" }, "expect": { "show": "S2" } },
+        { "at": "2026-11-11T12:00:20Z", "action": { "type": "displayed", "survey": "S2", "auto": true } },
+        { "at": "2026-11-11T12:00:30Z", "action": { "type": "track", "name": "a" }, "expect": { "show": null, "not_shown": { "S2": "frequency_limit" } } }
+      ]
+    },
+    {
+      "name": "global cooldown applies to targeting, not to showSurvey",
+      "config": { "settings": { "global_cooldown_seconds": 600 }, "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e1" } ], "frequency": { "mode": "always" } },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "event", "name": "e2" } ], "frequency": { "mode": "always" } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e1" }, "expect": { "show": "S1" } },
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "displayed", "survey": "S1", "auto": true } },
+        { "at": "2026-11-10T12:05:00Z", "action": { "type": "track", "name": "e2" }, "expect": { "show": null, "not_shown": { "S2": "global_cooldown" } } },
+        { "at": "2026-11-10T12:05:10Z", "action": { "type": "show", "survey": "S2", "force": false }, "expect": { "show": "S2", "not_shown": {} } },
+        { "at": "2026-11-10T12:05:10Z", "action": { "type": "displayed", "survey": "S2", "auto": false } },
+        { "at": "2026-11-10T12:09:59Z", "action": { "type": "track", "name": "e2" }, "expect": { "show": null, "not_shown": { "S2": "global_cooldown" } } },
+        { "at": "2026-11-10T12:10:00Z", "action": { "type": "track", "name": "e2" }, "expect": { "show": "S2", "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "sampling uses a stable install bucket (install-a: S1=48, S2=5)",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ], "frequency": { "mode": "always" }, "sampling_percent": 48 },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "event", "name": "e" } ], "frequency": { "mode": "always" }, "sampling_percent": 6 }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S2", "not_shown": { "S1": "sampled_out" } } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "show", "survey": "S1", "force": false }, "expect": { "show": "S1", "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "sampling hashes UTF-8 bytes (install zażółć-🙂: S1=60, S2=17)",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e1" } ], "frequency": { "mode": "always" }, "sampling_percent": 61 },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "event", "name": "e2" } ], "frequency": { "mode": "always" }, "sampling_percent": 17 }
+      ] },
+      "context": { "platform": "android", "app_id": "com.acme.app", "locale": "pl-PL", "install_id": "zażółć-🙂" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e1" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "track", "name": "e2" }, "expect": { "show": null, "not_shown": { "S2": "sampled_out" } } }
+      ]
+    },
+    {
+      "name": "pause, visible survey and disabled tracking",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ], "frequency": { "mode": "always" } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "pause" } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "paused" } } },
+        { "at": "2026-11-10T12:00:02Z", "action": { "type": "show", "survey": "S1", "force": false }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:03Z", "action": { "type": "resume" } },
+        { "at": "2026-11-10T12:00:04Z", "action": { "type": "visible", "value": true } },
+        { "at": "2026-11-10T12:00:05Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "another_survey_visible" } } },
+        { "at": "2026-11-10T12:00:06Z", "action": { "type": "show", "survey": "S1", "force": true }, "expect": { "show": null, "not_shown": { "S1": "another_survey_visible" } } },
+        { "at": "2026-11-10T12:00:07Z", "action": { "type": "visible", "value": false } },
+        { "at": "2026-11-10T12:00:08Z", "action": { "type": "set_tracking", "enabled": false } },
+        { "at": "2026-11-10T12:00:09Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "disabled" } } },
+        { "at": "2026-11-10T12:00:10Z", "action": { "type": "show", "survey": "S1", "force": true }, "expect": { "show": null, "not_shown": { "S1": "disabled" } } },
+        { "at": "2026-11-10T12:00:11Z", "action": { "type": "set_tracking", "enabled": true } },
+        { "at": "2026-11-10T12:00:12Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "showSurvey: unknown id, eligibility checks and force",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "schedule": { "ends_at": "2026-01-01T00:00:00Z" }, "audience": { "platforms": [ "android" ] } },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "audience": { "platforms": [ "android" ] } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "show", "survey": "nope", "force": false }, "expect": { "show": null, "not_shown": { "nope": "survey_not_found" } } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "show", "survey": "nope", "force": true }, "expect": { "show": null, "not_shown": { "nope": "survey_not_found" } } },
+        { "at": "2026-11-10T12:00:02Z", "action": { "type": "show", "survey": "S1", "force": false }, "expect": { "show": null, "not_shown": { "S1": "outside_schedule" } } },
+        { "at": "2026-11-10T12:00:03Z", "action": { "type": "show", "survey": "S2", "force": false }, "expect": { "show": null, "not_shown": { "S2": "platform_mismatch" } } },
+        { "at": "2026-11-10T12:00:04Z", "action": { "type": "show", "survey": "S1", "force": true }, "expect": { "show": "S1", "not_shown": {} } }
+      ]
+    },
+    {
+      "name": "schedule bounds: start inclusive, end exclusive",
+      "config": { "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "e" } ], "frequency": { "mode": "always" },
+          "schedule": { "starts_at": "2026-11-10T12:00:00Z", "ends_at": "2026-11-11T12:00:00Z" } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T11:59:59Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "outside_schedule" } } },
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-11T11:59:59Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-11T12:00:00Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S1": "outside_schedule" } } }
+      ]
+    },
+    {
+      "name": "defaults and unknown values",
+      "config": { "version": 7, "future_field": true, "surveys": [
+        { "id": "S1", "url": "https://acme.responsly.com/f/S1" },
+        { "id": "S2", "url": "https://acme.responsly.com/f/S2", "triggers": [ { "type": "shake" }, { "type": "event", "name": "e" } ],
+          "frequency": { "mode": "sometimes" }, "presentation": { "style": "hologram" }, "audience": { "match": "most" } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "shake" }, "expect": { "show": null, "not_shown": {} } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "show", "survey": "S1", "force": false }, "expect": { "show": "S1", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:02Z", "action": { "type": "track", "name": "e" }, "expect": { "show": "S2", "not_shown": {} } },
+        { "at": "2026-11-10T12:00:02Z", "action": { "type": "displayed", "survey": "S2", "auto": true } },
+        { "at": "2026-11-10T12:00:03Z", "action": { "type": "track", "name": "e" }, "expect": { "show": null, "not_shown": { "S2": "frequency_limit" } } }
+      ]
+    }
+  ]
+}

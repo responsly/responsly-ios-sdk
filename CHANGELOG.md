@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.8.0] - 2025-09-14
+
+- Share targeting fixtures across SDKs.
+
 ## [0.7.7] - 2025-09-06
 
 - Select surveys with on-device targeting.
