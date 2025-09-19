@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.8.1] - 2025-09-19
+
+- Fetch configuration through the SDK API.
+
 ## [0.8.0] - 2025-09-14
 
 - Share targeting fixtures across SDKs.
