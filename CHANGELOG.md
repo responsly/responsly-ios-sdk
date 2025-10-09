@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.8.4] - 2025-10-09
+
+- Define survey presenter lifecycle contracts.
+
 ## [0.8.3] - 2025-10-01
 
 - Verify telemetry batching and delivery.
