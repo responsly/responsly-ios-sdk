@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.8.5] - 2025-10-19
+
+- Implement survey context and message bridge.
+
 ## [0.8.4] - 2025-10-09
 
 - Define survey presenter lifecycle contracts.
