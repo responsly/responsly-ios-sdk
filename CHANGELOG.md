@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.8.7] - 2025-10-26
+
+- Provide deterministic SDK test infrastructure.
+
 ## [0.8.6] - 2025-10-22
 
 - Verify survey bridge protocol behavior.
