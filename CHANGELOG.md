@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.9.0] - 2025-10-29
+
+- Coordinate SDK lifecycle and survey selection.
+
 ## [0.8.7] - 2025-10-26
 
 - Provide deterministic SDK test infrastructure.
