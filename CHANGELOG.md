@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.9.2] - 2025-11-15
+
+- Expose the public iOS SDK entry point.
+
 ## [0.9.1] - 2025-11-05
 
 - Verify core lifecycle and targeting integration.
