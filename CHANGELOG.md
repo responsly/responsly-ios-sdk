@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.9.3] - 2025-11-24
+
+- Present survey web content and keyboard-aware layouts.
+
 ## [0.9.2] - 2025-11-15
 
 - Expose the public iOS SDK entry point.
