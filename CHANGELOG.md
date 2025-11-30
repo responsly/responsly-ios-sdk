@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.9.4] - 2025-11-30
+
+- Integrate UIKit presentation and privacy manifest.
+
 ## [0.9.3] - 2025-11-24
 
 - Present survey web content and keyboard-aware layouts.
