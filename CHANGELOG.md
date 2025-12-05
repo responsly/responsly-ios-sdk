@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [0.9.5] - 2025-12-05
+
+- Provide a SwiftUI example application.
+
 ## [0.9.4] - 2025-11-30
 
 - Integrate UIKit presentation and privacy manifest.

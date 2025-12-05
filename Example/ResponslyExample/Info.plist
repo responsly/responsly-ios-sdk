@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Example app only: lets the SDK and the survey page talk to a local backend over plain HTTP. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<!-- Needed by photo and video upload questions that use the camera. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo or video to attach to a survey answer.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record sound for a video attached to a survey answer.</string>
+</dict>
+</plist>
