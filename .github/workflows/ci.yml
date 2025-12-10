@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests (macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: swift test
+        run: swift test
+
+  build-ios:
+    name: Build (iOS Simulator)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the SDK
+        run: |
+          xcodebuild -scheme ResponslySDK \
+            -destination 'generic/platform=iOS Simulator' \
+            build
+      - name: Build the example app
+        run: |
+          xcodebuild -project Example/ResponslyExample.xcodeproj \
+            -scheme ResponslyExample \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO \
+            build

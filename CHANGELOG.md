@@ -2,6 +2,12 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.0.0] - 2025-12-10
+
+- First stable release.
+
+- First stable SDK release with installation guides.
+
 ## [0.9.5] - 2025-12-05
 
 - Provide a SwiftUI example application.
