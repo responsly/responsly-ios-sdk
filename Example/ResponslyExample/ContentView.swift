@@ -71,6 +71,34 @@ struct ContentView: View {
             LogView()
                 .frame(height: 220)
         }
+        .task { await runScript() }
+    }
+
+    /// Scripted run for automated checks: launch with `-autoRun initialize,identify,track` (also
+    /// `screen`, `show`, `pause`, `resume`, `close`, `reset`); steps run two seconds apart. The key,
+    /// host and survey id can be given the same way: `-sdkKey rsk_… -apiHost https://… -surveyId …`.
+    private func runScript() async {
+        guard let script = UserDefaults.standard.string(forKey: "autoRun") else { return }
+
+        for step in script.split(separator: ",").map({ $0.trimmingCharacters(in: .whitespaces) }) {
+            switch step {
+            case "initialize": initialize()
+            case "identify": identify()
+            case "track":
+                Responsly.shared.track("purchase_completed", properties: ["value": 49.9])
+                log.add("track(\"purchase_completed\", value: 49.9)")
+            case "screen":
+                Responsly.shared.screen("Checkout")
+                log.add("screen(\"Checkout\")")
+            case "show": showSurvey()
+            case "pause": Responsly.shared.pause()
+            case "resume": Responsly.shared.resume()
+            case "close": Responsly.shared.closeSurvey()
+            case "reset": Responsly.shared.reset()
+            default: log.add("autoRun: unknown step \"\(step)\"")
+            }
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        }
     }
 
     private func trimmed(_ string: String) -> String {

@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.1.0] - 2026-01-22
+
+- Example: scripted run from launch arguments, log on the console.
+
 ## [1.0.0] - 2025-12-10
 
 - First stable release.

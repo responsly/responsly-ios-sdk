@@ -32,6 +32,8 @@ final class EventLog: ObservableObject, ResponslyListener {
     }
 
     func add(_ text: String) {
+        // Also on the console, so a scripted run can be followed without the screen.
+        print("[Example] \(text)")
         entries.append(Entry(id: nextId, time: Date(), text: text))
         nextId += 1
         if entries.count > 500 {
