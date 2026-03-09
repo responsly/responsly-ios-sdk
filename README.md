@@ -22,7 +22,7 @@ then add the `ResponslySDK` product to your app target. In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/responsly/responsly-ios-sdk", from: "1.1.0"),
+    .package(url: "https://github.com/responsly/responsly-ios-sdk", from: "1.1.1"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -34,7 +34,7 @@ targets: [
 ### CocoaPods
 
 ```ruby
-pod 'ResponslySDK', :git => 'https://github.com/responsly/responsly-ios-sdk.git', :tag => '1.1.0'
+pod 'ResponslySDK', :git => 'https://github.com/responsly/responsly-ios-sdk.git', :tag => '1.1.1'
 ```
 
 ## Quick start
@@ -78,7 +78,7 @@ All methods are on `Responsly.shared`.
 | `track(_:properties:)` | Counts the event and evaluates event triggers. |
 | `screen(_:)` | Sets the current screen and evaluates screen triggers. |
 | `showSurvey(_:options:)` | Shows a survey by id. `ResponslyShowOptions(force:hiddenFields:locale:presentation:)`. |
-| `closeSurvey()` | Closes the survey that is visible or about to be shown. |
+| `closeSurvey()` | Closes the visible survey. One that is not on screen yet (waiting or still loading) is cancelled silently. |
 | `pause()` / `resume()` | Stops and resumes targeting; `showSurvey` still works. |
 | `setLocale(_:)` | Overrides the locale used for targeting and the survey's language; `nil` returns to the device language. |
 | `setHiddenFields(_:)` | Hidden-field values sent with every survey (replaces the previous map). |
@@ -86,7 +86,7 @@ All methods are on `Responsly.shared`.
 | `reset()` | Clears the user, traits, counters and cached configuration, and closes a visible survey — call it on sign-out. |
 | `setDisplayGuard(_:)` | Lets your app veto a survey right before it would appear. |
 | `addListener(_:)` / `removeListener(_:)` | Survey lifecycle callbacks. |
-| `Responsly.sdkVersion` | The SDK version, `"1.1.0"`. |
+| `Responsly.sdkVersion` | The SDK version, `"1.1.1"`. |
 
 Trait and property values are `ResponslyValue`: a string, a number, a boolean or a date. Literals work directly (`"pro"`, `5`, `true`); use `.date(…)` for dates. `ResponslyValue.from(_:)` converts loosely typed values (`Any`), which is what cross-platform bridges need.
 
@@ -112,7 +112,7 @@ final class SurveyObserver: ResponslyListener {
         print("completed", event.responseId, event.answers.count)
     }
 
-    func surveyDismissed(_ event: ResponslySurveyDismissedEvent) {}
+    func surveyDismissed(_ event: ResponslySurveyDismissedEvent) {}   // shown, then closed before completion
     func surveyError(_ event: ResponslySurveyErrorEvent) {}
 }
 
@@ -143,7 +143,7 @@ Responsly.shared.setDisplayGuard { survey, decide in
 }
 ```
 
-The guard is called on the main thread before a survey becomes visible. If it does not answer within 2 seconds the survey is shown. It is not asked for `showSurvey(…, options: ResponslyShowOptions(force: true))`.
+The guard is called on the main thread when the survey has loaded, right before it becomes visible. If it does not answer within 2 seconds the survey is shown. It is not asked for `showSurvey(…, options: ResponslyShowOptions(force: true))`.
 
 ### Showing a survey yourself
 

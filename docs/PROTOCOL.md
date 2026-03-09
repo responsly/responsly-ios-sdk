@@ -231,7 +231,7 @@ A JSON string: `{"responsly":1,"type":"<type>","payload":{...}}`.
 ### 5.4 Loading and navigation
 
 - The WebView is created and loaded while the container is hidden. It becomes visible on `ready`. If `ready` does not arrive within 15 seconds, or the main-frame load fails, the survey is not shown (`load_failed`).
-- Main-frame navigation to anything other than the survey URL's origin and path opens in the system browser and is cancelled in the WebView. Links that ask for a new window do the same.
+- Once the survey is visible, main-frame navigation to anything other than the survey URL's origin and path opens in the system browser and is cancelled in the WebView. Links that ask for a new window do the same. Before `ready` such a navigation (a redirect of the survey URL included) does not open anything: the survey is not shown (`load_failed`).
 - JavaScript, DOM storage and persistent cookies are enabled. File inputs (photo, file upload questions) must work: Android implements `onShowFileChooser`.
 - The user agent gets the suffix ` ResponslySDK/<version> (<platform>)`.
 
@@ -257,19 +257,19 @@ Names are the same on every platform, in the platform's idiom. All calls are saf
 
 | Call | Behaviour |
 |---|---|
-| `initialize(sdkKey, options)` | options: `apiHost`, `logLevel` (`none`, `error`, `info`, `debug`). Idempotent for the same key; a different key resets state first. |
+| `initialize(sdkKey, options)` | options: `apiHost`, `logLevel` (`none`, `error`, `info`, `debug`). Idempotent for the same key and host; a different key resets state first (keeping `install_id` and `tracking_enabled`); the same key with a different `apiHost` switches to it, drops the cached configuration and fetches again. |
 | `identify(userId, traits)` | sets the user id and merges traits |
 | `setAttributes(traits)` | merges traits; `null` removes |
 | `track(event, properties)` | counts the event, evaluates event triggers |
 | `screen(name)` | sets the current screen, evaluates screen triggers |
-| `showSurvey(surveyId, options)` | options: `force`, `hiddenFields`, `locale`, `presentation` (style override) |
-| `closeSurvey()` | closes a visible or waiting survey (counts as dismissed unless completed) |
+| `showSurvey(surveyId, options)` | options: `force`, `hiddenFields` (merged over `setHiddenFields`, per-call values win), `locale`, `presentation` (style override). Shown at once: `delay_seconds` applies to targeting only. Without a configuration it waits for a fetch already in flight, otherwise reports `config_unavailable`. |
+| `closeSurvey()` | closes a visible survey (counts as dismissed unless completed). A survey that is still waiting for its delay or loading is cancelled silently: no state change, no telemetry, no callback, because it was never shown. The same holds when `reset()` or `setTrackingEnabled(false)` cancels one. |
 | `pause()` / `resume()` | stops / resumes targeting; `showSurvey` still works |
 | `setLocale(tag or null)` | locale override |
 | `setHiddenFields(map)` | hidden-field values sent with every survey (replaces the previous map) |
 | `setTrackingEnabled(bool)` | false: no network, no targeting, nothing shown; persisted |
 | `reset()` | see section 3 |
-| `setDisplayGuard(guard or null)` | asked before a survey becomes visible: `guard(survey, decide)`; `decide(false)` vetoes (`vetoed`). No answer within 2 seconds counts as allow. Not asked for `force`. |
+| `setDisplayGuard(guard or null)` | asked when the page has reported `ready`, right before the survey becomes visible: `guard(survey, decide)`; `decide(false)` vetoes (`vetoed`) and the loaded page is discarded. No answer within 2 seconds counts as allow. Not asked for `force`. |
 | `addListener(listener)` / `removeListener` | see below |
 
 Listener callbacks (all optional, delivered on the main thread):

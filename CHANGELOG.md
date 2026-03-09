@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.1.1] - 2026-03-09
+
+- Ask the display guard at ready; cancel a not-yet-visible survey silently.
+
 ## [1.1.0] - 2026-01-22
 
 - Example: scripted run from launch arguments, log on the console.

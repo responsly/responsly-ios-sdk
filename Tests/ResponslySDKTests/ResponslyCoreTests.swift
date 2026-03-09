@@ -535,7 +535,7 @@ final class ResponslyCoreTests: XCTestCase {
 
     // MARK: - Display guard
 
-    func testDisplayGuardCanVeto() {
+    func testDisplayGuardIsAskedWhenThePageIsReadyAndCanVeto() throws {
         serveSingleSurvey()
         harness.initialize()
         var asked: [ResponslySurvey] = []
@@ -545,22 +545,42 @@ final class ResponslyCoreTests: XCTestCase {
             askedOnMainThread = askedOnMainThread && Thread.isMainThread
             decide(false)
         }
+
+        // The page loads first; the guard is not asked until it reports `ready`.
         core.track("purchase", properties: [:])
+        harness.settle()
+        let sessionId = try XCTUnwrap(presenter.presented.first?.sessionId)
+        XCTAssertEqual(asked, [])
+        XCTAssertEqual(events(), [])
+
+        presenter.sendMessage("ready")
         XCTAssertEqual(events(), ["notShown:S1:vetoed"])
         XCTAssertEqual(asked, [ResponslySurvey(id: "S1", name: "Survey S1")])
         XCTAssertTrue(askedOnMainThread)
-        XCTAssertEqual(presenter.presented.count, 0)
+        // The loaded page is discarded and nothing was counted.
+        XCTAssertEqual(presenter.dismissed.map { $0.id }, [sessionId])
+        XCTAssertEqual(presenter.dismissed.first?.animated, false)
+        XCTAssertEqual(presenter.revealed, [])
+        XCTAssertNil(harness.persistedState.surveys["S1"])
+        XCTAssertEqual(harness.persistedTelemetry, [])
 
-        // Also asked for a `showSurvey` that is not forced; `force` skips the guard.
+        // Also asked for a `showSurvey` that is not forced…
         core.showSurvey("S1", options: ResponslyShowOptions())
+        harness.settle()
+        presenter.sendMessage("ready")
         XCTAssertEqual(events(), ["notShown:S1:vetoed"])
+        XCTAssertEqual(asked.count, 2)
+
+        // …but not for a forced one.
         core.showSurvey("S1", options: ResponslyShowOptions(force: true))
         harness.settle()
+        presenter.sendMessage("ready")
+        XCTAssertEqual(events(), ["shown:S1:manual"])
         XCTAssertEqual(asked.count, 2)
-        XCTAssertEqual(presenter.presented.count, 1)
+        XCTAssertEqual(presenter.revealed.count, 1)
     }
 
-    func testDisplayGuardAllowsFromAnyThread() {
+    func testDisplayGuardAllowsFromAnyThread() throws {
         serveSingleSurvey()
         harness.initialize()
         let answered = expectation(description: "the guard answered")
@@ -573,10 +593,13 @@ final class ResponslyCoreTests: XCTestCase {
         }
         core.track("purchase", properties: [:])
         harness.settle()
-        wait(for: [answered], timeout: 2)
+        presenter.sendMessage("ready")
         harness.settle()
-        XCTAssertEqual(presenter.presented.count, 1)
-        XCTAssertEqual(events(), [])
+        wait(for: [answered], timeout: 2)
+        XCTAssertEqual(events(), ["shown:S1:event:purchase"])
+        XCTAssertEqual(presenter.revealed, [try XCTUnwrap(presenter.presented.first?.sessionId)])
+        XCTAssertEqual(presenter.dismissed.count, 0)
+        XCTAssertEqual(harness.persistedState.surveys["S1"]?.displayCount, 1)
     }
 
     func testNoAnswerFromTheDisplayGuardWithinTwoSecondsCountsAsAllow() {
@@ -585,10 +608,15 @@ final class ResponslyCoreTests: XCTestCase {
         var late: ((Bool) -> Void)?
         core.setDisplayGuard { _, decide in late = decide }
         core.track("purchase", properties: [:])
+        harness.settle()
+        presenter.sendMessage("ready")
         harness.advance(by: 1.9)
-        XCTAssertEqual(presenter.presented.count, 0)
+        XCTAssertNotNil(late)
+        XCTAssertEqual(presenter.revealed.count, 0)
+        XCTAssertEqual(events(), [])
         harness.advance(by: 0.1)
-        XCTAssertEqual(presenter.presented.count, 1)
+        XCTAssertEqual(presenter.revealed.count, 1)
+        XCTAssertEqual(events(), ["shown:S1:event:purchase"])
 
         // A veto that arrives too late changes nothing.
         late?(false)
@@ -596,12 +624,62 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertEqual(presenter.dismissed.count, 0)
 
         // Removing the guard.
-        presenter.sendMessage("ready")
         presenter.send(.closedByUser)
         core.setDisplayGuard(nil)
         core.track("purchase", properties: [:])
         harness.settle()
-        XCTAssertEqual(presenter.presented.count, 2)
+        presenter.sendMessage("ready")
+        XCTAssertEqual(events(), ["dismissed:S1", "shown:S1:event:purchase"])
+    }
+
+    func testTheLoadTimeoutDoesNotCountTheTimeSpentWaitingForTheGuard() {
+        serveSingleSurvey()
+        harness.initialize()
+        var decide: ((Bool) -> Void)?
+        core.setDisplayGuard { _, answer in decide = answer }
+        core.track("purchase", properties: [:])
+        // `ready` arrives one second before the load timeout…
+        harness.advance(by: 14)
+        presenter.sendMessage("ready")
+        harness.settle()
+        XCTAssertNotNil(decide)
+        // …and the guard takes its time: 15 seconds after the load started nothing has failed.
+        harness.advance(by: 1.5)
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.dismissed.count, 0)
+
+        decide?(true)
+        XCTAssertEqual(events(), ["shown:S1:event:purchase"])
+        // No timer from the loading phase is left to fire while the survey is visible.
+        harness.advance(by: 20)
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.dismissed.count, 0)
+    }
+
+    func testThePageCanStillFailWhileTheGuardIsDeciding() {
+        serveSingleSurvey()
+        harness.initialize()
+        var decide: ((Bool) -> Void)?
+        core.setDisplayGuard { _, answer in decide = answer }
+
+        core.track("purchase", properties: [:])
+        harness.settle()
+        presenter.sendMessage("ready")
+        presenter.sendMessage("error", payload: #"{"code":"closed","message":"This survey is closed"}"#)
+        XCTAssertEqual(events(), ["notShown:S1:survey_unavailable"])
+        XCTAssertEqual(presenter.dismissed.count, 1)
+        // The guard's answer for the discarded page is ignored.
+        decide?(true)
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.revealed, [])
+
+        core.track("purchase", properties: [:])
+        harness.settle()
+        presenter.sendMessage("ready")
+        presenter.send(.loadFailed("the web content process terminated"))
+        XCTAssertEqual(events(), ["notShown:S1:load_failed"])
+        XCTAssertEqual(presenter.dismissed.count, 2)
+        XCTAssertNil(harness.persistedState.surveys["S1"])
     }
 
     // MARK: - Loading
@@ -826,27 +904,80 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertEqual(harness.persistedState.surveys["S1"]?.dismissedCount, 1)
     }
 
-    func testCloseSurveyCancelsASurveyThatIsStillWaiting() {
+    func testCloseSurveyCancelsASurveyThatIsNotVisibleYetSilently() {
         serveSingleSurvey(extra: #""delay_seconds":5"#)
         harness.initialize()
+        var decide: ((Bool) -> Void)?
+        core.setDisplayGuard { _, answer in decide = answer }
+
+        // Waiting for its delay.
         core.track("purchase", properties: [:])
         harness.settle()
         core.closeSurvey()
-        XCTAssertEqual(events(), ["dismissed:S1"])
+        XCTAssertEqual(events(), [])
         harness.advance(by: 10)
         XCTAssertEqual(presenter.presented.count, 0)
-        // It was never displayed: no counters, no telemetry.
-        XCTAssertNil(harness.persistedState.surveys["S1"])
-        XCTAssertEqual(harness.persistedTelemetry, [])
 
-        // Also while the page is loading.
+        // Loading.
         core.track("purchase", properties: [:])
         harness.advance(by: 5)
         XCTAssertEqual(presenter.presented.count, 1)
         core.closeSurvey()
-        XCTAssertEqual(events(), ["dismissed:S1"])
+        XCTAssertEqual(events(), [])
         XCTAssertEqual(presenter.dismissed.count, 1)
         XCTAssertEqual(presenter.dismissed.first?.animated, false)
+        // The page it was loading reports `ready` too late; the load timeout is gone as well.
+        presenter.sendMessage("ready")
+        harness.advance(by: 30)
+        XCTAssertEqual(events(), [])
+
+        // Waiting for the display guard.
+        core.track("purchase", properties: [:])
+        harness.advance(by: 5)
+        presenter.sendMessage("ready")
+        harness.settle()
+        XCTAssertNotNil(decide)
+        core.closeSurvey()
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.dismissed.count, 2)
+        decide?(true)
+        harness.advance(by: 5)
+        XCTAssertEqual(events(), [])
+
+        // It was never shown: no callback, no state change, no telemetry.
+        XCTAssertEqual(presenter.revealed, [])
+        XCTAssertNil(harness.persistedState.surveys["S1"])
+        XCTAssertEqual(harness.persistedTelemetry, [])
+
+        // And the slot is free.
+        core.setDisplayGuard(nil)
+        core.track("purchase", properties: [:])
+        harness.advance(by: 5)
+        presenter.sendMessage("ready")
+        XCTAssertEqual(events(), ["shown:S1:event:purchase"])
+    }
+
+    func testResetAndDisablingTrackingCancelASurveyThatIsNotVisibleYetSilently() {
+        serveSingleSurvey()
+        harness.initialize()
+        core.track("purchase", properties: [:])
+        harness.settle()
+        XCTAssertEqual(presenter.presented.count, 1)
+        core.reset()
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.dismissed.count, 1)
+
+        core.track("purchase", properties: [:])
+        harness.settle()
+        XCTAssertEqual(presenter.presented.count, 2)
+        core.setTrackingEnabled(false)
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(presenter.dismissed.count, 2)
+        XCTAssertEqual(presenter.dismissed.map { $0.animated }, [false, false])
+
+        XCTAssertNil(harness.persistedState.surveys["S1"])
+        XCTAssertEqual(harness.persistedTelemetry, [])
+        XCTAssertEqual(presenter.revealed, [])
     }
 
     func testAFailureAfterTheSurveyIsVisibleReportsAnErrorAndCloses() {
