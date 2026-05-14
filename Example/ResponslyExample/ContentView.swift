@@ -10,6 +10,17 @@ struct ContentView: View {
     @State private var force = false
 
     var body: some View {
+        Group {
+            if UserDefaults.standard.bool(forKey: "demoScreen") {
+                DemoScreen()
+            } else {
+                controls
+            }
+        }
+        .task { await runScript() }
+    }
+
+    private var controls: some View {
         VStack(spacing: 0) {
             Form {
                 Section("SDK") {
@@ -71,10 +82,9 @@ struct ContentView: View {
             LogView()
                 .frame(height: 220)
         }
-        .task { await runScript() }
     }
 
-    /// Scripted run for automated checks: launch with `-autoRun initialize,identify,track` (also
+    /// Scripted run for automated checks and screenshots: launch with `-autoRun initialize,identify,track` (also
     /// `screen`, `show`, `pause`, `resume`, `close`, `reset`); steps run two seconds apart. The key,
     /// host and survey id can be given the same way: `-sdkKey rsk_… -apiHost https://… -surveyId …`.
     private func runScript() async {
@@ -176,5 +186,51 @@ private struct LogView: View {
             }
         }
         .background(Color(.secondarySystemBackground))
+    }
+}
+
+/// A plain order-confirmation screen shown instead of the controls when the app is launched with
+/// `-demoScreen YES`: something app-like to have behind a survey in screenshots.
+private struct DemoScreen: View {
+    private let items = [("Trail running shoes", "$129.00"), ("Merino socks, 2 pairs", "$24.00"), ("Shipping", "Free")]
+
+    var body: some View {
+        NavigationView {
+            List {
+                Section {
+                    VStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 52))
+                            .foregroundColor(.green)
+                        Text("Order confirmed")
+                            .font(.title2.weight(.semibold))
+                        Text("Arriving Thursday")
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                Section("Order #A-77") {
+                    ForEach(items, id: \.0) { item in
+                        HStack {
+                            Text(item.0)
+                            Spacer()
+                            Text(item.1).foregroundColor(.secondary)
+                        }
+                    }
+                    HStack {
+                        Text("Total").fontWeight(.semibold)
+                        Spacer()
+                        Text("$153.00").fontWeight(.semibold)
+                    }
+                }
+                Section {
+                    Button("Track order") {}
+                    Button("Continue shopping") {}
+                }
+            }
+            .navigationTitle("Acme")
+        }
+        .navigationViewStyle(.stack)
     }
 }

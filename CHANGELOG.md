@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.2.0] - 2026-05-14
+
+- Example: demo screen for screenshots (-demoScreen YES).
+
 ## [1.1.1] - 2026-03-09
 
 - Ask the display guard at ready; cancel a not-yet-visible survey silently.
