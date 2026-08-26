@@ -2,6 +2,10 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.2.1] - 2026-08-26
+
+- Release version 1.2.1.
+
 ## [1.2.0] - 2026-05-14
 
 - Example: demo screen for screenshots (-demoScreen YES).
