@@ -2,6 +2,12 @@
 
 All notable changes to this SDK are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- Changing the API host cancels surveys that have not become visible and ignores their late page or display-guard callbacks, while keeping a visible survey open.
+
 ## [1.2.1] - 2026-08-26
 
 - Release version 1.2.1.

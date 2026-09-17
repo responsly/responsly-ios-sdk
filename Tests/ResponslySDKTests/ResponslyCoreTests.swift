@@ -81,6 +81,123 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertEqual(transport.configRequests.count, 1)
     }
 
+    private let apiHostA = URL(string: "https://api-a.responsly.test")!
+    private let apiHostB = URL(string: "https://api-b.responsly.test")!
+
+    private func serveConfigsByAPIHost(_ first: String, _ second: String) {
+        transport.respond = { request in
+            guard request.url?.path.hasSuffix("/sdk/v1/config") == true else {
+                return FakeTransport.status(204)
+            }
+            return FakeTransport.json(request.url?.host == self.apiHostA.host ? first : second)
+        }
+    }
+
+    func testChangingAPIHostCancelsLoadingSurveyAndIgnoresLateReady() throws {
+        serveConfigsByAPIHost(
+            CoreHarness.config([CoreHarness.survey("SA", triggers: eventTrigger, extra: always)]),
+            CoreHarness.config([])
+        )
+        harness.initialize(apiHost: apiHostA)
+        core.identify(userId: "u_1", traits: ["plan": "pro"])
+        core.track("purchase", properties: [:])
+        harness.settle()
+        let sessionId = try XCTUnwrap(presenter.presented.first?.sessionId)
+        let before = harness.persistedState
+
+        harness.initialize(apiHost: apiHostB)
+
+        XCTAssertEqual(presenter.dismissed.map { $0.id }, [sessionId])
+        XCTAssertEqual(presenter.dismissed.first?.animated, false)
+        XCTAssertEqual(transport.configRequests.map { $0.url?.host }, [apiHostA.host, apiHostB.host])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(harness.persistedTelemetry, [])
+
+        presenter.sendMessage("ready")
+        harness.advance(by: 30)
+        XCTAssertEqual(presenter.revealed, [])
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(harness.persistedTelemetry, [])
+        XCTAssertEqual(transport.eventRequests.count, 0)
+    }
+
+    func testChangingAPIHostCancelsDelayedSurvey() {
+        serveConfigsByAPIHost(
+            CoreHarness.config([CoreHarness.survey("SA", triggers: eventTrigger,
+                                                 extra: always + #", "delay_seconds":5"#)]),
+            CoreHarness.config([])
+        )
+        harness.initialize(apiHost: apiHostA)
+        core.track("purchase", properties: [:])
+        harness.settle()
+        let before = harness.persistedState
+
+        harness.initialize(apiHost: apiHostB)
+        harness.advance(by: 10)
+
+        XCTAssertEqual(presenter.presented.count, 0)
+        XCTAssertEqual(presenter.dismissed.count, 0)
+        XCTAssertEqual(presenter.revealed, [])
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(harness.persistedTelemetry, [])
+    }
+
+    func testChangingAPIHostCancelsSurveyWaitingForDisplayGuard() throws {
+        serveConfigsByAPIHost(
+            CoreHarness.config([CoreHarness.survey("SA", triggers: eventTrigger, extra: always)]),
+            CoreHarness.config([])
+        )
+        harness.initialize(apiHost: apiHostA)
+        var decide: ((Bool) -> Void)?
+        core.setDisplayGuard { _, answer in decide = answer }
+        core.track("purchase", properties: [:])
+        harness.settle()
+        let sessionId = try XCTUnwrap(presenter.presented.first?.sessionId)
+        presenter.sendMessage("ready")
+        harness.settle()
+        let answer = try XCTUnwrap(decide)
+        let before = harness.persistedState
+
+        harness.initialize(apiHost: apiHostB)
+        answer(true)
+        harness.advance(by: 30)
+
+        XCTAssertEqual(presenter.dismissed.map { $0.id }, [sessionId])
+        XCTAssertEqual(presenter.dismissed.first?.animated, false)
+        XCTAssertEqual(presenter.revealed, [])
+        XCTAssertEqual(events(), [])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(harness.persistedTelemetry, [])
+        XCTAssertEqual(transport.eventRequests.count, 0)
+    }
+
+    func testChangingAPIHostLeavesVisibleSurveyAlone() throws {
+        serveConfigsByAPIHost(
+            CoreHarness.config([CoreHarness.survey("SA", triggers: eventTrigger, extra: always)]),
+            CoreHarness.config([])
+        )
+        harness.initialize(apiHost: apiHostA)
+        core.track("purchase", properties: [:])
+        harness.settle()
+        let sessionId = try XCTUnwrap(presenter.presented.first?.sessionId)
+        presenter.sendMessage("ready")
+        XCTAssertEqual(events(), ["shown:SA:event:purchase"])
+        let before = harness.persistedState
+
+        harness.initialize(apiHost: apiHostB)
+
+        XCTAssertEqual(presenter.dismissed.count, 0)
+        XCTAssertEqual(presenter.revealed, [sessionId])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(events(), [])
+
+        core.closeSurvey()
+        XCTAssertEqual(events(), ["dismissed:SA"])
+    }
+
     func testAnEmptyKeyDoesNotInitialize() {
         harness.initialize(key: "  ")
         XCTAssertEqual(transport.requests.count, 0)
