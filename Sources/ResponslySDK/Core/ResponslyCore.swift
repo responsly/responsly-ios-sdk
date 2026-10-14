@@ -312,6 +312,7 @@ final class ResponslyCore: @unchecked Sendable {
                 makeClient(key: key, apiHost: options.apiHost)
                 dropConfig()
                 configBlocked = false
+                appLaunchEvaluated = false
                 refreshConfigIfNeeded()
                 return
             }

@@ -198,6 +198,34 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertEqual(events(), ["dismissed:SA"])
     }
 
+    func testChangingAPIHostEvaluatesAppLaunchAgainstNewConfiguration() {
+        serveConfigsByAPIHost(
+            CoreHarness.config([]),
+            CoreHarness.config([CoreHarness.survey("SB", triggers: #"[{"type":"app_launch"}]"#,
+                                                 extra: always)])
+        )
+        harness.initialize(apiHost: apiHostA)
+        core.identify(userId: "u_1", traits: ["plan": "pro"])
+        harness.settle()
+        let before = harness.persistedState
+        XCTAssertEqual(presenter.presented.count, 0)
+
+        harness.initialize(apiHost: apiHostB)
+
+        XCTAssertEqual(presenter.presented.map { $0.surveyId }, ["SB"])
+        XCTAssertEqual(harness.persistedState, before)
+        XCTAssertEqual(events(), [])
+
+        // Repeating the same key and host neither refetches nor repeats app_launch.
+        harness.initialize(apiHost: apiHostB)
+        XCTAssertEqual(transport.configRequests.map { $0.url?.host }, [apiHostA.host, apiHostB.host])
+        XCTAssertEqual(presenter.presented.map { $0.surveyId }, ["SB"])
+
+        presenter.sendMessage("ready")
+        XCTAssertEqual(events(), ["shown:SB:app_launch"])
+        XCTAssertEqual(harness.persistedState.surveys["SB"]?.displayCount, 1)
+    }
+
     func testAnEmptyKeyDoesNotInitialize() {
         harness.initialize(key: "  ")
         XCTAssertEqual(transport.requests.count, 0)
