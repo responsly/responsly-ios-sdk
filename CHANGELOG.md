@@ -2,7 +2,7 @@
 
 All notable changes to this SDK are documented here.
 
-## [Unreleased]
+## [1.2.2] - 2026-11-09
 
 ### Fixed
 
