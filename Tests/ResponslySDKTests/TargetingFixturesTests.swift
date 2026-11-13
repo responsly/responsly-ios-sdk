@@ -16,7 +16,7 @@ final class TargetingFixturesTests: XCTestCase {
 
     func testEveryFixtureCase() throws {
         let cases = try loadCases()
-        XCTAssertGreaterThanOrEqual(cases.count, 17, "the fixture file should hold every conformance case")
+        XCTAssertGreaterThanOrEqual(cases.count, 18, "the fixture file should hold every conformance case")
 
         var checkedSteps = 0
         for fixture in cases {

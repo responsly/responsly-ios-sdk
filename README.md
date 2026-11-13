@@ -77,7 +77,7 @@ All methods are on `Responsly.shared`.
 | `setAttributes(_:)` | Merges traits; a `nil` value removes one. |
 | `track(_:properties:)` | Counts the event and evaluates event triggers. |
 | `screen(_:)` | Sets the current screen and evaluates screen triggers. |
-| `showSurvey(_:options:)` | Shows a survey by id. `ResponslyShowOptions(force:hiddenFields:locale:presentation:)`. |
+| `showSurvey(_:options:)` | Shows a survey by its Survey ID from the form's **Share → Mobile app** tab (a form with several configurations has one for each). `ResponslyShowOptions(force:hiddenFields:locale:presentation:)`. |
 | `closeSurvey()` | Closes the visible survey. One that is not on screen yet (waiting or still loading) is cancelled silently. |
 | `pause()` / `resume()` | Stops and resumes targeting; `showSurvey` still works. |
 | `setLocale(_:)` | Overrides the locale used for targeting and the survey's language; `nil` returns to the device language. |

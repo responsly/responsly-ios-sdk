@@ -5,7 +5,7 @@ This document is the contract shared by the backend, the survey page and every S
 ## 1. Concepts
 
 - **SDK key** — public, per team, format `rsk_` + 40 characters. Identifies the team; it is not a secret.
-- **Survey** — a form with the mobile channel enabled. Its `id` is the form's public hash id.
+- **Survey** — one configuration of a form's mobile channel: the form's address with its own targeting. A form has one configuration and may have more; each is a survey of its own, with the same `url` and its own `id`. The `id` is an opaque string: the form's public id for the first configuration, and the same id with a suffix (`aBcD1234-k3f9x2a1`) for the others. The SDK compares ids and never parses them.
 - **Targeting is evaluated on the device.** The SDK downloads the configuration, keeps state locally and decides. The server only receives aggregate telemetry.
 - **Rendering** — the SDK presents a native container (bottom sheet, dialog or full screen) holding a WebView that loads the survey page. The page talks to the SDK through the bridge in section 5.
 
@@ -64,6 +64,8 @@ Sends `If-None-Match` with the last `ETag` when there is a cached copy. Response
 ```
 
 Every field except `id` and `url` may be missing; the defaults are the values shown above (empty `triggers` means the survey is shown only by `showSurvey`). Unknown fields and unknown enum values are ignored: an unknown trigger type never matches, an unknown `op` evaluates to false, an unknown `frequency.mode` is treated as `once`, an unknown `presentation.style` as `bottom_sheet`, an unknown `presentation.size` as `medium`. A body whose `version` is greater than 1 is still read with these rules.
+
+A form with several configurations is in `surveys` once for each of them, next to each other, the first configuration first. They are separate surveys in everything below: the order they are selected in (4.1), state (3), sampling (4.2), telemetry and listeners. A form completed through one configuration is not completed for the others.
 
 `ttl` is in seconds. The SDK loads the cached configuration at `initialize`, fetches when there is no cache or it is older than `ttl`, and again whenever the app returns to the foreground with a stale cache. Minimum effective TTL: 60 seconds.
 
@@ -206,6 +208,8 @@ window.__RESPONSLY_SDK__ = {
 ```
 
 When the survey has `anonymous: true` the SDK sends `user: null` and an empty `hidden`.
+
+`survey_id` is the `id` from the configuration, unchanged. The page sends it back with the response, so the response records which configuration of the form it came through.
 
 iOS: a `WKUserScript` at document start, `forMainFrameOnly: true`. Android: `WebViewCompat.addDocumentStartJavaScript` with the survey origin as the only allowed origin rule.
 

@@ -168,6 +168,29 @@
       ]
     },
     {
+      "name": "two configurations of one form are separate surveys",
+      "config": { "surveys": [
+        { "id": "aBcD1234", "url": "https://acme.responsly.com/f/aBcD1234", "triggers": [ { "type": "event", "name": "purchase" } ], "frequency": { "mode": "until_completed" } },
+        { "id": "aBcD1234-k3f9x2a1", "url": "https://acme.responsly.com/f/aBcD1234", "triggers": [ { "type": "event", "name": "purchase" }, { "type": "screen", "name": "Settings" } ],
+          "frequency": { "mode": "until_completed" } }
+      ] },
+      "context": { "platform": "ios", "app_id": "com.acme.app", "locale": "en-US", "install_id": "install-a" },
+      "steps": [
+        { "at": "2026-11-10T12:00:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": "aBcD1234", "not_shown": { "aBcD1234-k3f9x2a1": "another_survey_selected" } } },
+        { "at": "2026-11-10T12:00:01Z", "action": { "type": "displayed", "survey": "aBcD1234", "auto": true } },
+        { "at": "2026-11-10T12:00:20Z", "action": { "type": "completed", "survey": "aBcD1234" } },
+        { "at": "2026-11-10T12:01:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": "aBcD1234-k3f9x2a1", "not_shown": { "aBcD1234": "already_completed" } } },
+        { "at": "2026-11-10T12:01:01Z", "action": { "type": "displayed", "survey": "aBcD1234-k3f9x2a1", "auto": true } },
+        { "at": "2026-11-10T12:01:10Z", "action": { "type": "dismissed", "survey": "aBcD1234-k3f9x2a1" } },
+        { "at": "2026-11-10T12:02:00Z", "action": { "type": "screen", "name": "Settings" }, "expect": { "show": "aBcD1234-k3f9x2a1", "not_shown": {} } },
+        { "at": "2026-11-10T12:02:01Z", "action": { "type": "displayed", "survey": "aBcD1234-k3f9x2a1", "auto": true } },
+        { "at": "2026-11-10T12:02:20Z", "action": { "type": "completed", "survey": "aBcD1234-k3f9x2a1" } },
+        { "at": "2026-11-10T12:03:00Z", "action": { "type": "track", "name": "purchase" }, "expect": { "show": null, "not_shown": { "aBcD1234": "already_completed", "aBcD1234-k3f9x2a1": "already_completed" } } },
+        { "at": "2026-11-10T12:03:10Z", "action": { "type": "show", "survey": "aBcD1234-k3f9x2a1", "force": true }, "expect": { "show": "aBcD1234-k3f9x2a1", "not_shown": {} } },
+        { "at": "2026-11-10T12:03:20Z", "action": { "type": "show", "survey": "aBcD1234-other", "force": false }, "expect": { "show": null, "not_shown": { "aBcD1234-other": "survey_not_found" } } }
+      ]
+    },
+    {
       "name": "frequency recurring and always",
       "config": { "surveys": [
         { "id": "S1", "url": "https://acme.responsly.com/f/S1", "triggers": [ { "type": "event", "name": "r" } ], "frequency": { "mode": "recurring", "recontact_seconds": 86400 } },
