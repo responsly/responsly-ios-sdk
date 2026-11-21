@@ -286,6 +286,35 @@ final class WebOriginAndNavigationTests: XCTestCase {
         XCTAssertEqual(decide("https://acme.responsly.com/f/aBcD1234", mainFrame: false, newWindow: true), .openExternally)
     }
 
+    func testOnlyATapOpensAndOnlyKnownSchemes() {
+        for url in ["https://example.com/privacy", "http://example.com", "mailto:hi@example.com", "tel:+48123", "sms:+48123"] {
+            XCTAssertTrue(NavigationPolicy.mayOpenExternally(URL(string: url)!, userInitiated: true), url)
+            XCTAssertFalse(NavigationPolicy.mayOpenExternally(URL(string: url)!, userInitiated: false), url)
+        }
+        for url in ["hostapp://account/delete", "itms-apps://apps.apple.com/app/id1", "facetime:+48123", "HOSTAPP://x"] {
+            XCTAssertFalse(NavigationPolicy.mayOpenExternally(URL(string: url)!, userInitiated: true), url)
+        }
+        XCTAssertTrue(NavigationPolicy.mayOpenExternally(URL(string: "HTTPS://example.com")!, userInitiated: true))
+    }
+
+    func testOnlyHTTPSExceptForLocalDevelopmentHosts() {
+        for url in [
+            "https://api.responsly.com", "https://203.0.113.7/sdk",
+            "http://localhost:8000", "http://api.localhost", "http://127.0.0.1:8085", "http://[::1]:8000",
+            "http://10.0.2.2:8000", "http://192.168.1.20", "http://172.16.0.1", "http://172.31.255.255",
+            "http://form.responsly.test:8086/f/x", "http://mac.local:8000", "http://localhost.:8000",
+        ] {
+            XCTAssertTrue(TransportSecurity.isAllowed(URL(string: url)!), url)
+        }
+        for url in [
+            "http://api.responsly.com", "http://203.0.113.7", "http://172.32.0.1", "http://172.15.0.1",
+            "http://192.169.1.1", "http://1.2.3.4", "http://10.0.0", "http://256.1.1.1", "http://localhost.example.com",
+            "http://test", "ftp://localhost", "file:///etc/hosts", "https://",
+        ] {
+            XCTAssertFalse(URL(string: url).map(TransportSecurity.isAllowed) ?? false, url)
+        }
+    }
+
     func testEmptyPathEqualsRoot() {
         let root = URL(string: "https://survey.example.com")!
         XCTAssertTrue(NavigationPolicy.isSurveyDocument(URL(string: "https://survey.example.com/?sdk=1")!, surveyURL: root))

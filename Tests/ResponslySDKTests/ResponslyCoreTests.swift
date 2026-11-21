@@ -73,6 +73,18 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertEqual(events(), [])
     }
 
+    func testAnAPIHostWithoutHTTPSIsRefused() {
+        serveSingleSurvey()
+        harness.initialize(apiHost: URL(string: "http://api.responsly.com")!)
+        XCTAssertEqual(transport.requests.count, 0)
+        core.showSurvey("S1", options: ResponslyShowOptions())
+        XCTAssertEqual(events(), ["notShown:S1:not_initialized"])
+
+        // Plain http is fine for a local development host.
+        harness.initialize(apiHost: URL(string: "http://localhost:8000")!)
+        XCTAssertEqual(transport.configRequests.map { $0.url?.absoluteString }, ["http://localhost:8000/sdk/v1/config"])
+    }
+
     func testInitializeIsIdempotentForTheSameKey() {
         serveSingleSurvey()
         harness.initialize()
@@ -1419,7 +1431,20 @@ final class ResponslyCoreTests: XCTestCase {
         XCTAssertTrue(logs.contains { $0.contains("config: 200") })
         XCTAssertTrue(logs.contains { $0.contains("survey S1 not shown: paused") })
         XCTAssertTrue(logs.contains { $0.contains("survey S1 selected by event \"purchase\"") })
-        XCTAssertTrue(logs.contains { $0.contains("bridge: {\"responsly\":1,\"type\":\"ready\"") })
+        XCTAssertTrue(logs.contains { $0.hasSuffix("bridge: ready") })
+    }
+
+    func testBridgeMessagesAreLoggedWithoutTheAnswers() {
+        serveSingleSurvey()
+        harness.initialize(logLevel: .debug)
+        core.track("purchase", properties: [:])
+        harness.settle()
+        presenter.sendMessage("ready")
+        presenter.sendMessage("question_answered", payload: #"{"question_id":"q1","type":"text","value":"my secret answer"}"#)
+        harness.settle()
+
+        XCTAssertTrue(harness.logs.contains { $0.hasSuffix("bridge: question_answered") })
+        XCTAssertFalse(harness.logs.contains { $0.contains("my secret answer") })
     }
 
     func testErrorLevelIsQuietInNormalOperation() {

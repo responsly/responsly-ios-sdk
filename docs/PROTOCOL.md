@@ -11,7 +11,9 @@ This document is the contract shared by the backend, the survey page and every S
 
 ## 2. HTTP API
 
-Base URL: `options.apiHost`, default `https://api.responsly.com`.
+Base URL: `options.apiHost`, default `https://api.responsly.com`. It must be an https address; plain http is accepted only for a local development host (`localhost`, names under `.localhost`, `.local` and `.test`, `::1`, and the loopback and private IPv4 ranges). With any other address `initialize` is ignored and logs an error.
+
+Redirects are not followed, so that the SDK key never reaches another address: a `3xx` other than `304` is a failed request, and the SDK logs an error that names the status.
 
 Headers on every request:
 
@@ -235,8 +237,11 @@ A JSON string: `{"responsly":1,"type":"<type>","payload":{...}}`.
 ### 5.4 Loading and navigation
 
 - The WebView is created and loaded while the container is hidden. It becomes visible on `ready`. If `ready` does not arrive within 15 seconds, or the main-frame load fails, the survey is not shown (`load_failed`).
-- Once the survey is visible, main-frame navigation to anything other than the survey URL's origin and path opens in the system browser and is cancelled in the WebView. Links that ask for a new window do the same. Before `ready` such a navigation (a redirect of the survey URL included) does not open anything: the survey is not shown (`load_failed`).
-- JavaScript, DOM storage and persistent cookies are enabled. File inputs (photo, file upload questions) must work: Android implements `onShowFileChooser`.
+- Once the survey is visible, main-frame navigation to anything other than the survey URL's origin and path is cancelled in the WebView. It opens outside the app only when the user tapped a link (iOS: `linkActivated`, or a new window, which WebKit opens only from a tap; Android: `hasGesture()`, or `onCreateWindow` with a user gesture), and only for `http`, `https`, `mailto`, `tel` and `sms`. A navigation started by a page script, a server redirect or `<meta http-equiv="refresh">` (the automatic redirect of an ending screen among them) opens nothing, and the survey stays; custom schemes, the host app's own deep links included, are never opened. Links that ask for a new window follow the same rules. Before `ready` such a navigation (a redirect of the survey URL included) does not open anything: the survey is not shown (`load_failed`).
+- A main-frame page that starts loading at another address anyway (a form sent with POST, which Android does not report to `shouldOverrideUrlLoading`) is stopped, and the survey fails.
+- A survey whose `url` is not https (plain http only for a local development host, as for `apiHost`) is not shown.
+- JavaScript, DOM storage and persistent cookies are enabled. File inputs (photo, file upload questions) must work: Android implements `onShowFileChooser` and hands the page only `content://` documents that do not belong to the app's own providers.
+- Debug logs name the type of a bridge message, never its payload, which carries the answers.
 - The user agent gets the suffix ` ResponslySDK/<version> (<platform>)`.
 
 ## 6. Presentation

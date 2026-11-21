@@ -286,6 +286,11 @@ final class APIClientTests: XCTestCase {
         transport.respond = { _ in FakeTransport.status(503) }
         XCTAssertEqual(fetch(makeClient()), .failed("HTTP 503"))
 
+        for status in [301, 302, 307, 308] {
+            transport.respond = { _ in FakeTransport.status(status) }
+            XCTAssertEqual(fetch(makeClient()), .redirected(status: status))
+        }
+
         transport.respond = { _ in .failure("offline") }
         XCTAssertEqual(fetch(makeClient()), .failed("offline"))
 

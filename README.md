@@ -159,9 +159,9 @@ Responsly.shared.showSurvey("AbCd1234", options: ResponslyShowOptions(
 ## Good to know
 
 - **Presentation.** The style (bottom sheet, dialog, full screen), its size and whether the user can dismiss it come from the survey's settings in Responsly. The container follows the keyboard, honours Reduce Motion and closes by itself shortly after the survey is completed.
-- **Links** in a survey open in the system browser.
+- **Links** in a survey open in the system browser when the user taps them (`http`, `https`, `mailto`, `tel`, `sms`). A survey never leaves the app by itself: an automatic redirect of an ending screen does not open the browser.
 - **File and photo questions** work out of the box. If a survey lets people take a photo or record a video, your app's `Info.plist` needs `NSCameraUsageDescription` (and `NSMicrophoneUsageDescription` for video), as for any camera use on iOS.
-- **Debugging.** With `logLevel: .debug` the SDK logs every targeting decision with its reason, every configuration fetch and every message from the survey, prefixed `[Responsly]`, and the survey can be inspected with Safari's Web Inspector.
+- **Debugging.** With `logLevel: .debug` the SDK logs every targeting decision with its reason, every configuration fetch and the type of every message from the survey (never the answers), prefixed `[Responsly]`, and the survey can be inspected with Safari's Web Inspector.
 - **App extensions** are not supported: surveys need an app window.
 
 ## Privacy

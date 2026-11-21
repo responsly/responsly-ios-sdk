@@ -209,6 +209,7 @@ final class ConfigDecodingTests: XCTestCase {
           { "id": "relative", "url": "/f/relative" },
           { "id": "script", "url": "javascript:alert(1)" },
           { "id": "file", "url": "file:///etc/hosts" },
+          { "id": "cleartext", "url": "http://acme.responsly.com/f/cleartext" },
           "nonsense",
           { "id": "ok", "url": "http://form.responsly.test:8086/f/ok" },
           { "id": "ok", "url": "https://acme.responsly.com/f/duplicate" }
