@@ -118,7 +118,7 @@ final class PublicEventTests: XCTestCase {
         XCTAssertNil(show.locale)
         XCTAssertNil(show.presentation)
 
-        XCTAssertEqual(Responsly.sdkVersion, "1.2.2")
+        XCTAssertEqual(Responsly.sdkVersion, "1.2.3")
     }
 
     private func json(_ dictionary: [String: Any]) throws -> String {

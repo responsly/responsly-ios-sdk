@@ -2,6 +2,15 @@
 
 All notable changes to this SDK are documented here.
 
+## [1.2.3] - 2026-11-21
+
+### Security
+
+- API requests no longer follow redirects, so the SDK key and app metadata never reach another address. A `3xx` from the API host is a failed request, and the SDK logs an error that names the status: set `apiHost` to the address it redirects to.
+- A survey opens an address outside the app only after a tap on a link, and only for `http`, `https`, `mailto`, `tel` and `sms`. A page script, a server redirect or the automatic redirect of an ending screen opens nothing, and custom schemes, the app's own deep links included, are never opened.
+- `apiHost` and survey addresses must use https; plain http is accepted only for local development hosts (`localhost`, `.local`, `.test`, private IPv4 addresses). `initialize` with another address is ignored and logs an error.
+- Debug logs name the type of a survey message instead of printing it, so answers no longer appear in the system log.
+
 ## [1.2.2] - 2026-11-09
 
 ### Fixed

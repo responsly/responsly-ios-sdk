@@ -22,7 +22,7 @@ then add the `ResponslySDK` product to your app target. In a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/responsly/responsly-ios-sdk", from: "1.2.2"),
+    .package(url: "https://github.com/responsly/responsly-ios-sdk", from: "1.2.3"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -34,7 +34,7 @@ targets: [
 ### CocoaPods
 
 ```ruby
-pod 'ResponslySDK', :git => 'https://github.com/responsly/responsly-ios-sdk.git', :tag => '1.2.2'
+pod 'ResponslySDK', :git => 'https://github.com/responsly/responsly-ios-sdk.git', :tag => '1.2.3'
 ```
 
 ## Quick start
@@ -86,7 +86,7 @@ All methods are on `Responsly.shared`.
 | `reset()` | Clears the user, traits, counters and cached configuration, and closes a visible survey — call it on sign-out. |
 | `setDisplayGuard(_:)` | Lets your app veto a survey right before it would appear. |
 | `addListener(_:)` / `removeListener(_:)` | Survey lifecycle callbacks. |
-| `Responsly.sdkVersion` | The SDK version, `"1.2.2"`. |
+| `Responsly.sdkVersion` | The SDK version, `"1.2.3"`. |
 
 Trait and property values are `ResponslyValue`: a string, a number, a boolean or a date. Literals work directly (`"pro"`, `5`, `true`); use `.date(…)` for dates. `ResponslyValue.from(_:)` converts loosely typed values (`Any`), which is what cross-platform bridges need.
 
